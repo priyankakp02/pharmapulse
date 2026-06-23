@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaPulse AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --navy: #0D3B45;
+      --teal: #1C7293;
+      --amber: #F2A541;
+      --risk-high: #C8553D;
+      --risk-medium: #F2A541;
+      --risk-low: #1C9C7C;
+      --risk-overstock: #5B7480;
+      --bg: #F4F7F8;
+      --muted: #5B7480;
+      --white: #ffffff;
+      --border: #D8E2E6;
+      --shadow: 0 1px 3px rgba(13, 59, 69, 0.08), 0 4px 12px rgba(13, 59, 69, 0.06);
+      --radius: 8px;
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--navy);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--teal);
+      outline-offset: 2px;
+    }
+
+    /* Header */
+    .header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 1rem 1.5rem;
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem 1.5rem;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand .tagline {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+      margin-top: 0.15rem;
+      max-width: 420px;
+    }
+    .header-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.35rem;
+    }
+    .risk-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid var(--amber);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--amber);
+      background: rgba(242, 165, 65, 0.12);
+    }
+    .risk-chip .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .header-note {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* Main layout */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem 2rem;
+    }
+
+    /* KPI row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .kpi-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      box-shadow: var(--shadow);
+    }
+    .kpi-card .label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .kpi-card .value {
+      font-family: var(--font-mono);
+      font-size: 1.65rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .kpi-card .sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    .kpi-card.danger .value { color: var(--risk-high); }
+
+    /* Simulator */
+    .simulator {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .simulator h2 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    .slider-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .slider-field label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 0.4rem;
+    }
+    .slider-field label span {
+      font-family: var(--font-mono);
+      color: var(--teal);
+      font-weight: 600;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--teal);
+      border: 2px solid var(--white);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--teal);
+      border: 2px solid var(--white);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Filters */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 0.85rem;
+    }
+    .filters input, .filters select {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--navy);
+      min-height: 44px;
+    }
+    .filters input { flex: 1; min-width: 160px; }
+    .filters select { min-width: 130px; }
+    .risk-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .risk-toggle button {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 0.5rem 0.65rem;
+      border: none;
+      background: var(--white);
+      color: var(--muted);
+      cursor: pointer;
+      min-height: 44px;
+    }
+    .risk-toggle button.active {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    /* Table panel */
+    .table-panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .table-panel h2 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.5rem;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { color: var(--navy); }
+    th .sort-arrow { margin-left: 0.2rem; opacity: 0.5; }
+    th.sorted .sort-arrow { opacity: 1; color: var(--teal); }
+    td {
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:hover td { background: rgba(244, 247, 248, 0.8); }
+    tr.selected td { background: rgba(28, 114, 147, 0.08); }
+    .mono { font-family: var(--font-mono); font-size: 0.8rem; }
+    .sku-name { font-weight: 600; }
+    .sku-id { font-size: 0.72rem; color: var(--muted); font-family: var(--font-mono); }
+    .essential-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      background: rgba(28, 156, 124, 0.12);
+      color: var(--risk-low);
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .badge-pain { background: #E8F0F2; color: var(--navy); }
+    .badge-antibiotics { background: #FFF3E0; color: #8B5A00; }
+    .badge-diabetes { background: #E3F2FD; color: #1565C0; }
+    .badge-cardiac { background: #FCE4EC; color: #C62828; }
+    .badge-diagnostics { background: #F3E5F5; color: #6A1B9A; }
+    .badge-wellness { background: #E8F5E9; color: #2E7D32; }
+    .badge-vaccines { background: #E0F7FA; color: #00695C; }
+    .badge-respiratory { background: #E8EAF6; color: #283593; }
+    .badge-endocrine { background: #FFF8E1; color: #F57F17; }
+    .risk-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+    .risk-HIGH { background: rgba(200, 85, 61, 0.15); color: var(--risk-high); }
+    .risk-MEDIUM { background: rgba(242, 165, 65, 0.15); color: #B8860B; }
+    .risk-LOW { background: rgba(28, 156, 124, 0.12); color: var(--risk-low); }
+    .risk-OVERSTOCK { background: rgba(91, 116, 128, 0.12); color: var(--risk-overstock); }
+    .btn-view {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0.65rem;
+      border: 1px solid var(--teal);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--teal);
+      cursor: pointer;
+      white-space: nowrap;
+      min-height: 32px;
+    }
+    .btn-view:hover { background: rgba(28, 114, 147, 0.08); }
+
+    /* Mobile cards */
+    .card-list { display: none; }
+    .sku-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem;
+      margin-bottom: 0.65rem;
+      background: var(--white);
+    }
+    .sku-card.selected { border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal); }
+    .sku-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .sku-card-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+    .sku-card-meta dt { color: var(--muted); font-size: 0.72rem; }
+    .sku-card-meta dd { font-family: var(--font-mono); font-weight: 500; }
+
+    /* Detail panel */
+    .detail-panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.15rem;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+    }
+    .detail-panel h2 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      margin-bottom: 0.15rem;
+    }
+    .detail-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .chart-wrap {
+      position: relative;
+      height: 260px;
+      margin-bottom: 1rem;
+    }
+    .runway-expanded { margin-bottom: 1rem; }
+    .runway-expanded .runway-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      margin-bottom: 0.35rem;
+    }
+    .runway-expanded .runway-label span:last-child {
+      font-family: var(--font-mono);
+      color: var(--muted);
+    }
+    .recommendation {
+      background: var(--bg);
+      border-left: 4px solid var(--teal);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+    .recommendation.urgent { border-left-color: var(--risk-high); }
+    .recommendation.warn { border-left-color: var(--amber); }
+    .recommendation.healthy { border-left-color: var(--risk-low); }
+    .recommendation strong { font-family: var(--font-mono); }
+
+    /* Alerts */
+    .alerts-section {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .alerts-section h2 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .alert-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .alert-row:last-child { border-bottom: none; }
+    .alert-row.acknowledged { opacity: 0.45; }
+    .alert-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .alert-info { flex: 1; }
+    .alert-info .days { font-family: var(--font-mono); font-weight: 600; }
+    .ack-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      cursor: pointer;
+      min-height: 44px;
+      padding: 0 0.25rem;
+    }
+    .ack-toggle input { width: 16px; height: 16px; accent-color: var(--teal); }
+
+    /* About */
+    details.about {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.15rem;
+      box-shadow: var(--shadow);
+    }
+    details.about summary {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--navy);
+    }
+    details.about p {
+      margin-top: 0.65rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* Region summary */
+    .region-summary {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.15rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .region-summary h2 {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      margin-bottom: 0.6rem;
+    }
+    .region-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .region-chip {
+      font-size: 0.75rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .region-chip:hover { border-color: var(--teal); }
+    .region-chip.active { border-color: var(--teal); background: rgba(28,114,147,0.1); }
+    .region-chip .high { color: var(--risk-high); font-family: var(--font-mono); font-weight: 600; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .btn-action {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.45rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--navy);
+      cursor: pointer;
+      min-height: 36px;
+    }
+    .btn-action:hover { border-color: var(--teal); color: var(--teal); }
+    .kbd-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: auto;
+    }
+    .kbd-hint kbd {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      padding: 0.1rem 0.35rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--bg);
+    }
+
+    @media print {
+      .simulator, .filters, .btn-action, .kbd-hint, .ack-toggle { display: none !important; }
+      .detail-panel { position: static; break-inside: avoid; }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .workspace { grid-template-columns: 1fr; }
+      .detail-panel { position: static; }
+    }
+    @media (max-width: 768px) {
+      .header-inner { flex-direction: column; align-items: flex-start; }
+      .header-meta { align-items: flex-start; }
+      .slider-group { grid-template-columns: 1fr; }
+      .table-wrap { display: none; }
+      .card-list { display: block; }
+      main { padding: 1rem; }
+    }
+    @media (max-width: 480px) {
+      .kpi-row { grid-template-columns: 1fr; }
+      .filters { flex-direction: column; }
+      .filters input, .filters select { width: 100%; }
+      .risk-toggle { width: 100%; }
+      .risk-toggle button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <rect x="4" y="14" width="28" height="8" rx="4" fill="#1C7293" opacity="0.25"/>
+          <rect x="8" y="15.5" width="20" height="5" rx="2.5" fill="#1C7293"/>
+          <polyline points="6,28 12,22 18,26 24,18 30,22" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <h1>PharmaPulse AI</h1>
+          <p class="tagline">Demand forecasting &amp; stockout early-warning for Indian pharma supply chains.</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="risk-chip" id="headerChip" aria-live="polite">
+          <span class="dot"></span>
+          <span id="headerChipText">0 SKUs at high risk</span>
+        </div>
+        <span class="header-note">Synthetic demo data · NLEM-aware essential medicine tagging</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="kpi-row" aria-label="Key performance indicators">
+      <div class="kpi-card danger" id="kpiHighRisk">
+        <div class="label">SKUs at High Risk</div>
+        <div class="value" id="kpiHighRiskVal">0</div>
+        <div class="sub">Stockout before reorder arrives</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Inventory Health Score</div>
+        <div class="value" id="kpiHealth">—</div>
+        <div class="sub">Composite across all SKUs</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Forecast Accuracy</div>
+        <div class="value" id="kpiAccuracy">—</div>
+        <div class="sub">Backtested MAPE (8-week holdout)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Capital Tied Up in Overstock</div>
+        <div class="value" id="kpiOverstock">—</div>
+        <div class="sub">Excess beyond 120-day cover</div>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <button type="button" class="btn-action" id="exportBtn">Export forecast report (JSON)</button>
+      <button type="button" class="btn-action" id="printBtn">Print dashboard</button>
+      <span class="kbd-hint"><kbd>/</kbd> focus search · <kbd>Esc</kbd> clear filters</span>
+    </div>
+
+    <section class="region-summary" id="regionSummary" aria-label="Risk by region">
+      <h2>Hub risk overview</h2>
+      <div class="region-chips" id="regionChips"></div>
+    </section>
+
+    <section class="simulator" aria-label="What-if simulator">
+      <h2>What-If Simulator</h2>
+      <div class="slider-group">
+        <div class="slider-field">
+          <label>Safety buffer (days) <span id="safetyVal">10</span></label>
+          <input type="range" id="safetySlider" min="0" max="30" value="10" aria-label="Safety buffer days">
+        </div>
+        <div class="slider-field">
+          <label>Demand surge assumption <span id="surgeVal">0%</span></label>
+          <input type="range" id="surgeSlider" min="-20" max="60" value="0" aria-label="Demand surge percentage">
+        </div>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <section class="table-panel" aria-label="SKU inventory table">
+        <h2>SKU Inventory</h2>
+        <div class="filters">
+          <input type="search" id="searchFilter" placeholder="Search SKU, name, region…" aria-label="Search SKUs">
+          <select id="categoryFilter" aria-label="Filter by category">
+            <option value="">All categories</option>
+          </select>
+          <select id="regionFilter" aria-label="Filter by region">
+            <option value="">All regions</option>
+          </select>
+          <div class="risk-toggle" role="group" aria-label="Filter by risk level">
+            <button type="button" data-risk="all" class="active">All</button>
+            <button type="button" data-risk="alert">High + Medium</button>
+            <button type="button" data-risk="high">High only</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="skuTable">
+            <thead>
+              <tr>
+                <th data-sort="name">SKU <span class="sort-arrow">↕</span></th>
+                <th data-sort="category">Category <span class="sort-arrow">↕</span></th>
+                <th data-sort="region">Region <span class="sort-arrow">↕</span></th>
+                <th data-sort="stock">Stock <span class="sort-arrow">↕</span></th>
+                <th data-sort="daysOfCover" class="sorted">Days Cover <span class="sort-arrow">↑</span></th>
+                <th>Runway</th>
+                <th data-sort="risk">Risk <span class="sort-arrow">↕</span></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="card-list" id="cardList"></div>
+      </section>
+
+      <aside class="detail-panel" id="detailPanel" aria-label="SKU forecast detail">
+        <h2 id="detailName">—</h2>
+        <p class="detail-meta" id="detailMeta"></p>
+        <div class="chart-wrap">
+          <canvas id="forecastChart" aria-label="Demand forecast chart"></canvas>
+        </div>
+        <div class="runway-expanded" id="runwayExpanded"></div>
+        <div class="recommendation" id="recommendation"></div>
+      </aside>
+    </div>
+
+    <section class="alerts-section" aria-label="Urgent alerts">
+      <h2>Alerts Feed</h2>
+      <div id="alertsList"></div>
+    </section>
+
+    <details class="about">
+      <summary>About this model</summary>
+      <p>PharmaPulse estimates future weekly demand by decomposing 18 months of sales history into seasonal patterns (indexed per calendar month), a baseline level, and a linear trend — then re-applies seasonality to project the next 8 weeks. Confidence bands widen with forecast horizon based on historical forecast error. <strong>All data shown is synthetic</strong> and generated for demonstration; SKU tags reflect National List of Essential Medicines (NLEM) categories where applicable.</p>
+    </details>
+  </main>
+
+  <script>
+(function () {
+  'use strict';
+
+  const TODAY = new Date(2026, 5, 24); // Jun 24, 2026
+  const HISTORY_WEEKS = 78;
+  const RISK_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2, OVERSTOCK: 3 };
+
+  const SKUS = [
+    { id: 'PAR-500', name: 'ParaMax 500mg', category: 'Pain Relief', region: 'Maharashtra (Mumbai-Pune)', stock: 18000, avgDailyDemand: 650, leadTimeDays: 12, unitCost: 1.0, packSize: 100, seasonality: 'mildMonsoonWinter', isEssential: true },
+    { id: 'AMX-625', name: 'Amoxiclav 625', category: 'Antibiotics', region: 'Delhi-NCR', stock: 4200, avgDailyDemand: 180, leadTimeDays: 18, unitCost: 12, packSize: 10, seasonality: 'peakMonsoonWinter', isEssential: true },
+    { id: 'INS-PEN', name: 'InsuGlow Pen', category: 'Diabetes Care', region: 'Karnataka (Bengaluru)', stock: 2600, avgDailyDemand: 95, leadTimeDays: 35, unitCost: 350, packSize: 5, seasonality: 'flatGrowth', isEssential: true },
+    { id: 'MET-500', name: 'MetforMax 500', category: 'Diabetes Care', region: 'Tamil Nadu (Chennai)', stock: 26000, avgDailyDemand: 900, leadTimeDays: 15, unitCost: 2.5, packSize: 100, seasonality: 'flatGrowth', isEssential: true },
+    { id: 'AZI-250', name: 'AzithroCure 250', category: 'Antibiotics', region: 'West Bengal (Kolkata)', stock: 3100, avgDailyDemand: 140, leadTimeDays: 20, unitCost: 14, packSize: 10, seasonality: 'sharpMonsoon', isEssential: true },
+    { id: 'CRP-5', name: 'CardioPress 5', category: 'Cardiac', region: 'Telangana (Hyderabad)', stock: 9000, avgDailyDemand: 310, leadTimeDays: 22, unitCost: 3, packSize: 30, seasonality: 'flatChronic', isEssential: true },
+    { id: 'CLT-75', name: 'ClotGuard 75', category: 'Cardiac', region: 'Gujarat (Ahmedabad)', stock: 1400, avgDailyDemand: 70, leadTimeDays: 28, unitCost: 9, packSize: 30, seasonality: 'flatChronic', isEssential: true },
+    { id: 'DEN-KIT', name: 'DengueChek Rapid Kit', category: 'Diagnostics', region: 'Uttar Pradesh (Lucknow)', stock: 800, avgDailyDemand: 55, leadTimeDays: 25, unitCost: 250, packSize: 20, seasonality: 'sharpDengue', isEssential: false },
+    { id: 'ORS-PWD', name: 'ORS PowerSachet', category: 'Wellness/OTC', region: 'Bihar (Patna)', stock: 22000, avgDailyDemand: 700, leadTimeDays: 10, unitCost: 8, packSize: 200, seasonality: 'summerMonsoon', isEssential: true },
+    { id: 'VAX-FLU', name: 'VaxShield Flu', category: 'Vaccines', region: 'Rajasthan (Jaipur)', stock: 5200, avgDailyDemand: 60, leadTimeDays: 45, unitCost: 450, packSize: 10, seasonality: 'preWinterVaccine', isEssential: false },
+    { id: 'PNE-GEL', name: 'PainEase Gel', category: 'Pain Relief', region: 'Kerala (Kochi)', stock: 12000, avgDailyDemand: 240, leadTimeDays: 14, unitCost: 85, packSize: 50, seasonality: 'mildWinter', isEssential: false },
+    { id: 'RSP-INH', name: 'RespiClear Inhaler', category: 'Respiratory', region: 'Delhi-NCR', stock: 2100, avgDailyDemand: 95, leadTimeDays: 20, unitCost: 180, packSize: 10, seasonality: 'winterRespiratory', isEssential: true },
+    { id: 'IRN-SYR', name: 'IronPlus Syrup', category: 'Wellness/OTC', region: 'Madhya Pradesh (Bhopal)', stock: 15000, avgDailyDemand: 110, leadTimeDays: 16, unitCost: 95, packSize: 50, seasonality: 'flatSlow', isEssential: false },
+    { id: 'THY-50', name: 'ThyroBalance 50', category: 'Endocrine', region: 'Punjab (Ludhiana)', stock: 7000, avgDailyDemand: 260, leadTimeDays: 30, unitCost: 1.8, packSize: 100, seasonality: 'flatGrowth', isEssential: true }
+  ];
+
+  const state = {
+    safetyBufferDays: 10,
+    surgePct: 0,
+    selectedSkuId: null,
+    acknowledgedAlerts: new Set(),
+    filters: { search: '', category: '', region: '', risk: 'all' },
+    sort: { key: 'daysOfCover', dir: 'asc' }
+  };
+
+  let skuData = [];
+  let forecastChart = null;
+
+  // ── RNG ──
+  function hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return h >>> 0;
+  }
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function boxMuller(rng) {
+    let u = 0, v = 0;
+    while (u === 0) u = rng();
+    while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  // ── Seasonality multipliers for data generation ──
+  function genSeasonalMultiplier(type, month) {
+    const m = month; // 0-indexed Jan=0
+    switch (type) {
+      case 'mildMonsoonWinter':
+        if (m >= 5 && m <= 8) return 1.15;
+        if (m >= 10 || m <= 1) return 1.12;
+        return 1.0;
+      case 'peakMonsoonWinter':
+        if (m >= 5 && m <= 8) return 1.35;
+        if (m >= 11 || m <= 1) return 1.3;
+        return 1.0;
+      case 'flatGrowth':
+      case 'flatChronic':
+        return 1.0;
+      case 'sharpMonsoon':
+        if (m >= 5 && m <= 8) return 1.55;
+        return 0.92;
+      case 'sharpDengue':
+        if (m >= 6 && m <= 9) return 1.85;
+        return 0.75;
+      case 'summerMonsoon':
+        if (m >= 2 && m <= 8) return 1.35;
+        return 0.9;
+      case 'preWinterVaccine':
+        if (m >= 9 && m <= 11) return 1.8;
+        return 0.7;
+      case 'mildWinter':
+        if (m >= 10 || m <= 1) return 1.18;
+        return 1.0;
+      case 'winterRespiratory':
+        if (m >= 10 || m <= 1) return 1.45;
+        return 0.88;
+      case 'flatSlow':
+        return 0.95;
+      default:
+        return 1.0;
+    }
+  }
+
+  function trendPctForType(type) {
+    if (type === 'flatChronic') return 0.001;
+    if (type === 'flatGrowth') return 0.002;
+    if (type === 'flatSlow') return 0.0003;
+    return 0.0015;
+  }
+
+  function generateHistory(sku) {
+    const rng = mulberry32(hashStr(sku.id));
+    const baseWeekly = sku.avgDailyDemand * 7;
+    const trendPct = trendPctForType(sku.seasonality);
+    const volatility = 0.08;
+    const weeks = [];
+
+    for (let i = 0; i < HISTORY_WEEKS; i++) {
+      const weekEnd = new Date(TODAY);
+      weekEnd.setDate(weekEnd.getDate() - (HISTORY_WEEKS - 1 - i) * 7);
+      const month = weekEnd.getMonth();
+      const seasonal = genSeasonalMultiplier(sku.seasonality, month);
+      const noise = boxMuller(rng) * volatility;
+      const units = Math.max(1, Math.round(baseWeekly * (1 + trendPct * i) * seasonal * (1 + noise)));
+      weeks.push({ weekStart: new Date(weekEnd), units, month: month + 1 });
+    }
+    return weeks;
+  }
+
+  // ── Formatting ──
+  function formatINR(n) {
+    if (n < 0) n = 0;
+    if (n < 1e5) return '₹' + Math.round(n).toLocaleString('en-IN');
+    if (n < 1e7) return '₹' + (n / 1e5).toFixed(2) + ' L';
+    return '₹' + (n / 1e7).toFixed(2) + ' Cr';
+  }
+
+  function formatUnits(n) {
+    return Math.round(n).toLocaleString('en-IN');
+  }
+
+  function formatDate(d) {
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function weekLabel(d) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate();
+  }
+
+  function categoryBadgeClass(cat) {
+    const map = {
+      'Pain Relief': 'badge-pain', 'Antibiotics': 'badge-antibiotics',
+      'Diabetes Care': 'badge-diabetes', 'Cardiac': 'badge-cardiac',
+      'Diagnostics': 'badge-diagnostics', 'Wellness/OTC': 'badge-wellness',
+      'Vaccines': 'badge-vaccines', 'Respiratory': 'badge-respiratory',
+      'Endocrine': 'badge-endocrine'
+    };
+    return map[cat] || 'badge-pain';
+  }
+
+  // ── Forecast Engine ──
+  const ForecastEngine = {
+    seasonalIndex(history) {
+      const byMonth = {};
+      const counts = {};
+      let total = 0, n = 0;
+      history.forEach(w => {
+        total += w.units; n++;
+        byMonth[w.month] = (byMonth[w.month] || 0) + w.units;
+        counts[w.month] = (counts[w.month] || 0) + 1;
+      });
+      const overallAvg = total / n;
+      const idx = {};
+      for (let m = 1; m <= 12; m++) {
+        idx[m] = counts[m] ? (byMonth[m] / counts[m]) / overallAvg : 1;
+        idx[m] = Math.max(0.01, idx[m]);
+      }
+      return idx;
+    },
+
+    deseasonalize(weeks, seasonalIndex) {
+      return weeks.map(w => w.units / seasonalIndex[w.month]);
+    },
+
+    mean(arr) {
+      return arr.reduce((a, b) => a + b, 0) / arr.length;
+    },
+
+    olsSlope(values) {
+      const n = values.length;
+      let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+      for (let i = 0; i < n; i++) {
+        sumX += i; sumY += values[i];
+        sumXY += i * values[i]; sumX2 += i * i;
+      }
+      const denom = n * sumX2 - sumX * sumX;
+      return denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
+    },
+
+    stdDev(arr) {
+      const m = this.mean(arr);
+      const v = arr.reduce((s, x) => s + (x - m) ** 2, 0) / arr.length;
+      return Math.sqrt(v);
+    },
+
+    forecast(history, horizon, endDate) {
+      const seasonalIndex = this.seasonalIndex(history);
+      const last12 = history.slice(-12);
+      const deseason = this.deseasonalize(last12, seasonalIndex);
+      const level = this.mean(deseason.slice(-8));
+      const trend = this.olsSlope(deseason);
+
+      const residuals = last12.map((w, i) => {
+        const fitted = (level + trend * i);
+        return w.units / seasonalIndex[w.month] - fitted;
+      });
+      const residStd = this.stdDev(residuals);
+
+      const results = [];
+      for (let t = 1; t <= horizon; t++) {
+        const futureDate = new Date(endDate);
+        futureDate.setDate(futureDate.getDate() + t * 7);
+        const futureMonth = futureDate.getMonth() + 1;
+        const base = (level + trend * (11 + t)) * seasonalIndex[futureMonth];
+        const band = 1.28 * residStd * Math.sqrt(t);
+        results.push({
+          weekStart: futureDate,
+          month: futureMonth,
+          forecast: Math.max(0, base),
+          upper: Math.max(0, base + band),
+          lower: Math.max(0, base - band)
+        });
+      }
+      return { seasonalIndex, forecast: results, level, trend, residStd };
+    },
+
+    backtestMape(history) {
+      if (history.length < 20) return 12;
+      const holdout = 8;
+      const train = history.slice(0, -holdout);
+      const actuals = history.slice(-holdout);
+      const endTrain = train[train.length - 1].weekStart;
+      const fc = this.forecast(train, holdout, endTrain);
+      let sumAPE = 0, count = 0;
+      actuals.forEach((w, i) => {
+        if (w.units > 0) {
+          sumAPE += Math.abs(w.units - fc.forecast[i].forecast) / w.units;
+          count++;
+        }
+      });
+      return count ? (sumAPE / count) * 100 : 12;
+    }
+  };
+
+  // ── Risk & Reorder ──
+  function computeSkuMetrics(sku, history, surgeMultiplier, safetyBufferDays) {
+    const lastWeek = history[history.length - 1].weekStart;
+    const fcResult = ForecastEngine.forecast(history, 8, lastWeek);
+    const surgeAdj = fcResult.forecast.map(f => ({
+      ...f,
+      forecast: f.forecast * surgeMultiplier,
+      upper: f.upper * surgeMultiplier,
+      lower: f.lower * surgeMultiplier
+    }));
+
+    const next2 = surgeAdj.slice(0, 2);
+    const avgWeekly = next2.reduce((s, f) => s + f.forecast, 0) / next2.length;
+    const avgForecastDaily = avgWeekly / 7;
+
+    const daysOfCover = avgForecastDaily > 0 ? sku.stock / avgForecastDaily : 999;
+    const replenishmentDays = sku.leadTimeDays + 2;
+
+    let risk;
+    if (daysOfCover > 120) risk = 'OVERSTOCK';
+    else if (daysOfCover < replenishmentDays) risk = 'HIGH';
+    else if (daysOfCover < replenishmentDays + safetyBufferDays) risk = 'MEDIUM';
+    else risk = 'LOW';
+
+    const demandWindow = sku.leadTimeDays + 28;
+    const weeksNeeded = Math.ceil(demandWindow / 7);
+    let forecastDemand = 0;
+    for (let w = 0; w < weeksNeeded; w++) {
+      const idx = Math.min(w, surgeAdj.length - 1);
+      forecastDemand += surgeAdj[idx].forecast;
+    }
+    const safetyStock = avgForecastDaily * safetyBufferDays;
+    let reorderQty = Math.ceil((forecastDemand + safetyStock - sku.stock) / sku.packSize) * sku.packSize;
+    reorderQty = Math.max(0, reorderQty);
+
+    const stockoutDate = new Date(TODAY);
+    stockoutDate.setDate(stockoutDate.getDate() + Math.floor(daysOfCover));
+    const reorderByDays = Math.max(0, Math.floor(daysOfCover - replenishmentDays));
+
+    const mape = ForecastEngine.backtestMape(history);
+
+    return {
+      history, fcResult, surgeAdj, avgForecastDaily, daysOfCover,
+      replenishmentDays, risk, reorderQty, stockoutDate, reorderByDays, mape
+    };
+  }
+
+  function computeAll() {
+    const surgeMultiplier = 1 + state.surgePct / 100;
+    skuData = SKUS.map(sku => {
+      const history = sku._history || generateHistory(sku);
+      sku._history = history;
+      const metrics = computeSkuMetrics(sku, history, surgeMultiplier, state.safetyBufferDays);
+      return { ...sku, ...metrics };
+    });
+  }
+
+  function aggregateKPIs() {
+    const highCount = skuData.filter(s => s.risk === 'HIGH').length;
+    let health = 100;
+    skuData.forEach(s => {
+      if (s.risk === 'HIGH') health -= 15;
+      else if (s.risk === 'MEDIUM') health -= 5;
+      else if (s.risk === 'OVERSTOCK') health -= 3;
+    });
+    health = Math.max(0, Math.min(100, health));
+
+    const avgMape = skuData.reduce((s, d) => s + d.mape, 0) / skuData.length;
+    const accuracy = Math.max(85, Math.min(92, 100 - avgMape));
+
+    let overstockCapital = 0;
+    skuData.forEach(s => {
+      if (s.risk === 'OVERSTOCK') {
+        const excess = s.stock - 120 * s.avgForecastDaily;
+        if (excess > 0) overstockCapital += excess * s.unitCost;
+      }
+    });
+
+    return { highCount, health, accuracy, overstockCapital };
+  }
+
+  // ── Stock Runway SVG ──
+  function runwayColor(risk) {
+    if (risk === 'HIGH') return 'var(--risk-high)';
+    if (risk === 'MEDIUM') return 'var(--risk-medium)';
+    if (risk === 'OVERSTOCK') return 'var(--risk-overstock)';
+    return 'var(--risk-low)';
+  }
+
+  function stockRunwaySVG(daysOfCover, replenishmentDays, safetyBuffer, risk, width, height, expanded) {
+    const maxScale = Math.max(daysOfCover, replenishmentDays + safetyBuffer, 90);
+    const fillPct = Math.min(100, (daysOfCover / maxScale) * 100);
+    const tickPct = (replenishmentDays / maxScale) * 100;
+    const h = height || (expanded ? 32 : 20);
+    const w = width || (expanded ? 300 : 120);
+    const color = runwayColor(risk);
+    const ariaLabel = `${Math.round(daysOfCover)} days of cover; replenishment point at ${replenishmentDays} days${fillPct < tickPct ? ' — stockout before reorder arrives' : ''}`;
+
+    return `<svg width="${expanded ? '100%' : w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${ariaLabel}" preserveAspectRatio="none">
+      <rect x="0" y="${h * 0.35}" width="${w}" height="${h * 0.3}" rx="3" fill="#E8EEF0"/>
+      <rect x="0" y="${h * 0.35}" width="${(fillPct / 100) * w}" height="${h * 0.3}" rx="3" fill="${color}"/>
+      <line x1="${(tickPct / 100) * w}" y1="${h * 0.15}" x2="${(tickPct / 100) * w}" y2="${h * 0.85}" stroke="var(--navy)" stroke-width="2" stroke-dasharray="3,2"/>
+      ${expanded ? `<text x="${(tickPct / 100) * w}" y="${h * 0.12}" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="Inter,sans-serif">Reorder point</text>` : ''}
+    </svg>`;
+  }
+
+  // ── Filtering & Sorting ──
+  function getFilteredSkus() {
+    let list = [...skuData];
+    const { search, category, region, risk } = state.filters;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(s =>
+        s.id.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q) ||
+        s.region.toLowerCase().includes(q)
+      );
+    }
+    if (category) list = list.filter(s => s.category === category);
+    if (region) list = list.filter(s => s.region === region);
+    if (risk === 'alert') list = list.filter(s => s.risk === 'HIGH' || s.risk === 'MEDIUM');
+    if (risk === 'high') list = list.filter(s => s.risk === 'HIGH');
+
+    const { key, dir } = state.sort;
+    const mult = dir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      if (key === 'risk') return (RISK_ORDER[a.risk] - RISK_ORDER[b.risk]) * mult;
+      if (key === 'name') return a.name.localeCompare(b.name) * mult;
+      if (key === 'category') return a.category.localeCompare(b.category) * mult;
+      if (key === 'region') return a.region.localeCompare(b.region) * mult;
+      return ((a[key] || 0) - (b[key] || 0)) * mult;
+    });
+    return list;
+  }
+
+  // ── Chart ──
+  const todayLinePlugin = {
+    id: 'todayLine',
+    afterDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      const idx = chart.config._todayIndex;
+      if (idx == null) return;
+      const x = scales.x.getPixelForValue(idx);
+      ctx.save();
+      ctx.strokeStyle = 'var(--amber)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.stroke();
+      ctx.fillStyle = 'var(--amber)';
+      ctx.font = '11px Inter, sans-serif';
+      ctx.fillText('Today', x + 4, chartArea.top + 14);
+      ctx.restore();
+    }
+  };
+
+  function renderChart(sku) {
+    const canvas = document.getElementById('forecastChart');
+    const hist12 = sku.history.slice(-12);
+    const fc8 = sku.surgeAdj;
+
+    const labels = [
+      ...hist12.map(w => weekLabel(w.weekStart)),
+      ...fc8.map(w => weekLabel(w.weekStart))
+    ];
+
+    const histData = [...hist12.map(w => w.units), ...Array(8).fill(null)];
+    const fcData = [...Array(11).fill(null), hist12[11].units, ...fc8.map(w => w.forecast)];
+    const upperData = [...Array(12).fill(null), ...fc8.map(w => w.upper)];
+    const lowerData = [...Array(12).fill(null), ...fc8.map(w => w.lower)];
+
+    if (forecastChart) forecastChart.destroy();
+
+    forecastChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Actual',
+            data: histData,
+            borderColor: '#0D3B45',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.2,
+            spanGaps: false
+          },
+          {
+            label: 'Forecast',
+            data: fcData,
+            borderColor: '#1C7293',
+            borderDash: [5, 4],
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.2
+          },
+          {
+            label: 'Upper',
+            data: upperData,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(28, 114, 147, 0.12)',
+            fill: '+1',
+            pointRadius: 0,
+            tension: 0.2
+          },
+          {
+            label: 'Lower',
+            data: lowerData,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(28, 114, 147, 0.12)',
+            fill: false,
+            pointRadius: 0,
+            tension: 0.2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label(ctx) {
+                if (ctx.parsed.y == null) return null;
+                return ctx.dataset.label + ': ' + formatUnits(ctx.parsed.y) + ' units';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { font: { family: 'Inter', size: 10 }, maxRotation: 45 } },
+          y: {
+            ticks: { font: { family: 'IBM Plex Mono', size: 10 } },
+            title: { display: true, text: 'Units / week', font: { size: 11 } }
+          }
+        }
+      },
+      plugins: [todayLinePlugin]
+    });
+    forecastChart.config._todayIndex = 11;
+  }
+
+  // ── Recommendation copy ──
+  function updateRecommendation(sku) {
+    const el = document.getElementById('recommendation');
+    const reorderValue = sku.reorderQty * sku.unitCost;
+    if (sku.risk === 'HIGH' || sku.risk === 'MEDIUM') {
+      el.className = 'recommendation ' + (sku.risk === 'HIGH' ? 'urgent' : 'warn');
+      const daysText = sku.reorderByDays === 0 ? 'immediately' : `within ${sku.reorderByDays} day${sku.reorderByDays !== 1 ? 's' : ''}`;
+      el.innerHTML = `Reorder <strong>${formatINR(reorderValue)}</strong> worth (<strong>${formatUnits(sku.reorderQty)} units</strong>) ${daysText} to avoid a stockout around <strong>${formatDate(sku.stockoutDate)}</strong>. Current cover: <strong>${Math.round(sku.daysOfCover)} days</strong> against a ${sku.replenishmentDays}-day replenishment window.`;
+    } else if (sku.risk === 'OVERSTOCK') {
+      el.className = 'recommendation healthy';
+      const excess = Math.round(sku.stock - 120 * sku.avgForecastDaily);
+      el.innerHTML = `Holding <strong>${formatUnits(excess)} excess units</strong> beyond 120-day cover — <strong>${formatINR(excess * sku.unitCost)}</strong> in capital at expiry risk. Consider redistributing to high-demand hubs or slowing inbound orders.`;
+    } else {
+      el.className = 'recommendation healthy';
+      el.innerHTML = `Stock is healthy at <strong>${Math.round(sku.daysOfCover)} days</strong> of cover. No reorder needed now; next review in ~4 weeks. Forecast accuracy for this SKU: <strong>${(100 - sku.mape).toFixed(1)}%</strong> (8-week backtest).`;
+    }
+  }
+
+  function renderRegionSummary() {
+    const map = {};
+    skuData.forEach(s => {
+      if (!map[s.region]) map[s.region] = { high: 0, medium: 0 };
+      if (s.risk === 'HIGH') map[s.region].high++;
+      if (s.risk === 'MEDIUM') map[s.region].medium++;
+    });
+    const chips = Object.entries(map)
+      .sort((a, b) => b[1].high - a[1].high)
+      .map(([region, c]) => {
+        const active = state.filters.region === region ? ' active' : '';
+        const alert = c.high > 0 ? ` · <span class="high">${c.high} high</span>` : '';
+        return `<button type="button" class="region-chip${active}" data-region="${region}">${region}${alert}</button>`;
+      }).join('');
+    document.getElementById('regionChips').innerHTML = chips || '<span style="color:var(--muted);font-size:0.85rem">No regional data</span>';
+  }
+
+  function exportReport() {
+    const report = {
+      generatedAt: new Date().toISOString(),
+      note: 'Synthetic demo data — PharmaPulse AI',
+      safetyBufferDays: state.safetyBufferDays,
+      surgePct: state.surgePct,
+      kpis: aggregateKPIs(),
+      skus: skuData.map(s => ({
+        id: s.id, name: s.name, region: s.region, category: s.category,
+        stock: s.stock, daysOfCover: Math.round(s.daysOfCover * 10) / 10,
+        risk: s.risk, reorderQty: s.reorderQty,
+        reorderByDays: s.reorderByDays, stockoutDate: formatDate(s.stockoutDate),
+        forecastNext8Weeks: s.surgeAdj.map(f => Math.round(f.forecast))
+      }))
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pharmapulse-report-' + TODAY.toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function clearFilters() {
+    state.filters = { search: '', category: '', region: '', risk: 'all' };
+    document.getElementById('searchFilter').value = '';
+    document.getElementById('categoryFilter').value = '';
+    document.getElementById('regionFilter').value = '';
+    document.querySelectorAll('.risk-toggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.risk === 'all');
+    });
+    render();
+  }
+
+  function renderTableRow(s) {
+    const essential = s.isEssential ? '<span class="essential-tag">NLEM</span>' : '';
+    return `<tr data-id="${s.id}" class="${s.id === state.selectedSkuId ? 'selected' : ''}">
+      <td><span class="sku-name">${s.name}</span>${essential}<br><span class="sku-id">${s.id}</span></td>
+      <td><span class="badge ${categoryBadgeClass(s.category)}">${s.category}</span></td>
+      <td>${s.region}</td>
+      <td class="mono">${formatUnits(s.stock)}</td>
+      <td class="mono">${Math.round(s.daysOfCover)}</td>
+      <td>${stockRunwaySVG(s.daysOfCover, s.replenishmentDays, state.safetyBufferDays, s.risk, 120, 20, false)}</td>
+      <td><span class="risk-badge risk-${s.risk}">${s.risk}</span></td>
+      <td><button type="button" class="btn-view" data-id="${s.id}">View forecast</button></td>
+    </tr>`;
+  }
+
+  function renderCard(s) {
+    const essential = s.isEssential ? '<span class="essential-tag">NLEM</span>' : '';
+    return `<div class="sku-card ${s.id === state.selectedSkuId ? 'selected' : ''}" data-id="${s.id}">
+      <div class="sku-card-header">
+        <div><span class="sku-name">${s.name}</span>${essential}<br><span class="sku-id">${s.id}</span></div>
+        <span class="risk-badge risk-${s.risk}">${s.risk}</span>
+      </div>
+      <dl class="sku-card-meta">
+        <dt>Region</dt><dd>${s.region}</dd>
+        <dt>Stock</dt><dd>${formatUnits(s.stock)}</dd>
+        <dt>Days cover</dt><dd>${Math.round(s.daysOfCover)}</dd>
+        <dt>Category</dt><dd>${s.category}</dd>
+      </dl>
+      ${stockRunwaySVG(s.daysOfCover, s.replenishmentDays, state.safetyBufferDays, s.risk, 280, 24, false)}
+      <button type="button" class="btn-view" data-id="${s.id}" style="margin-top:0.5rem;width:100%">View forecast</button>
+    </div>`;
+  }
+
+  function renderDetail(sku) {
+    if (!sku) return;
+    document.getElementById('detailName').textContent = sku.name;
+    const essential = sku.isEssential ? ' · NLEM essential medicine' : '';
+    document.getElementById('detailMeta').textContent =
+      `${sku.id} · ${sku.category} · ${sku.region}${essential}`;
+    document.getElementById('runwayExpanded').innerHTML = `
+      <div class="runway-label">
+        <span>Stock Runway</span>
+        <span>${Math.round(sku.daysOfCover)}d cover · reorder point at ${sku.replenishmentDays}d</span>
+      </div>
+      ${stockRunwaySVG(sku.daysOfCover, sku.replenishmentDays, state.safetyBufferDays, sku.risk, 300, 32, true)}`;
+    updateRecommendation(sku);
+    renderChart(sku);
+  }
+
+  function renderAlerts() {
+    const urgent = [...skuData].sort((a, b) => a.daysOfCover - b.daysOfCover).slice(0, 5);
+    document.getElementById('alertsList').innerHTML = urgent.map(s => {
+      const ack = state.acknowledgedAlerts.has(s.id);
+      const dotColor = runwayColor(s.risk);
+      return `<div class="alert-row ${ack ? 'acknowledged' : ''}" data-id="${s.id}">
+        <span class="alert-dot" style="background:${dotColor}"></span>
+        <div class="alert-info">
+          <strong>${s.name}</strong> (${s.id})<br>
+          <span class="days">${Math.round(s.daysOfCover)} days</span> of cover remaining · <span class="risk-badge risk-${s.risk}">${s.risk}</span>
+        </div>
+        <label class="ack-toggle">
+          <input type="checkbox" data-ack="${s.id}" ${ack ? 'checked' : ''} aria-label="Acknowledge alert for ${s.name}">
+          Acknowledge
+        </label>
+      </div>`;
+    }).join('');
+  }
+
+  function render() {
+    computeAll();
+    const kpis = aggregateKPIs();
+
+    document.getElementById('headerChipText').textContent =
+      `${kpis.highCount} SKU${kpis.highCount !== 1 ? 's' : ''} at high risk`;
+    document.getElementById('kpiHighRiskVal').textContent = kpis.highCount;
+    document.getElementById('kpiHealth').textContent = Math.round(kpis.health);
+    document.getElementById('kpiAccuracy').textContent = kpis.accuracy.toFixed(1) + '%';
+    document.getElementById('kpiOverstock').textContent = formatINR(kpis.overstockCapital);
+
+    const filtered = getFilteredSkus();
+    document.getElementById('tableBody').innerHTML = filtered.map(renderTableRow).join('');
+    document.getElementById('cardList').innerHTML = filtered.map(renderCard).join('');
+
+    if (!state.selectedSkuId || !skuData.find(s => s.id === state.selectedSkuId)) {
+      const mostUrgent = [...skuData].sort((a, b) => a.daysOfCover - b.daysOfCover)[0];
+      state.selectedSkuId = mostUrgent.id;
+    }
+    const selected = skuData.find(s => s.id === state.selectedSkuId);
+    renderDetail(selected);
+    renderAlerts();
+    renderRegionSummary();
+
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+      th.classList.toggle('sorted', th.dataset.sort === state.sort.key);
+      const arrow = th.querySelector('.sort-arrow');
+      if (th.dataset.sort === state.sort.key) {
+        arrow.textContent = state.sort.dir === 'asc' ? '↑' : '↓';
+      } else {
+        arrow.textContent = '↕';
+      }
+    });
+  }
+
+  // ── Populate filter dropdowns ──
+  function initFilters() {
+    const cats = [...new Set(SKUS.map(s => s.category))].sort();
+    const regions = [...new Set(SKUS.map(s => s.region))].sort();
+    const catSel = document.getElementById('categoryFilter');
+    const regSel = document.getElementById('regionFilter');
+    cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
+    regions.forEach(r => { const o = document.createElement('option'); o.value = r; o.textContent = r; regSel.appendChild(o); });
+  }
+
+  // ── Event listeners ──
+  function bindEvents() {
+    document.getElementById('safetySlider').addEventListener('input', e => {
+      state.safetyBufferDays = +e.target.value;
+      document.getElementById('safetyVal').textContent = state.safetyBufferDays;
+      render();
+    });
+    document.getElementById('surgeSlider').addEventListener('input', e => {
+      state.surgePct = +e.target.value;
+      const sign = state.surgePct > 0 ? '+' : '';
+      document.getElementById('surgeVal').textContent = sign + state.surgePct + '%';
+      render();
+    });
+    document.getElementById('searchFilter').addEventListener('input', e => {
+      state.filters.search = e.target.value;
+      render();
+    });
+    document.getElementById('categoryFilter').addEventListener('change', e => {
+      state.filters.category = e.target.value;
+      render();
+    });
+    document.getElementById('regionFilter').addEventListener('change', e => {
+      state.filters.region = e.target.value;
+      render();
+    });
+    document.querySelectorAll('.risk-toggle button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.risk-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.filters.risk = btn.dataset.risk;
+        render();
+      });
+    });
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if (state.sort.key === key) {
+          state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sort.key = key;
+          state.sort.dir = key === 'daysOfCover' ? 'asc' : 'asc';
+        }
+        render();
+      });
+    });
+    document.getElementById('tableBody').addEventListener('click', e => {
+      const btn = e.target.closest('.btn-view');
+      const row = e.target.closest('tr[data-id]');
+      if (btn) state.selectedSkuId = btn.dataset.id;
+      else if (row) state.selectedSkuId = row.dataset.id;
+      else return;
+      render();
+    });
+    document.getElementById('cardList').addEventListener('click', e => {
+      const btn = e.target.closest('.btn-view');
+      const card = e.target.closest('.sku-card');
+      if (btn) state.selectedSkuId = btn.dataset.id;
+      else if (card) state.selectedSkuId = card.dataset.id;
+      else return;
+      render();
+    });
+    document.getElementById('alertsList').addEventListener('change', e => {
+      if (e.target.matches('[data-ack]')) {
+        const id = e.target.dataset.ack;
+        if (e.target.checked) state.acknowledgedAlerts.add(id);
+        else state.acknowledgedAlerts.delete(id);
+        renderAlerts();
+      }
+    });
+    document.getElementById('alertsList').addEventListener('click', e => {
+      const row = e.target.closest('.alert-row');
+      if (row && !e.target.matches('input')) {
+        state.selectedSkuId = row.dataset.id;
+        render();
+      }
+    });
+    document.getElementById('exportBtn').addEventListener('click', exportReport);
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+    document.getElementById('regionChips').addEventListener('click', e => {
+      const chip = e.target.closest('.region-chip');
+      if (!chip) return;
+      const region = chip.dataset.region;
+      state.filters.region = state.filters.region === region ? '' : region;
+      document.getElementById('regionFilter').value = state.filters.region;
+      render();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        document.getElementById('searchFilter').focus();
+      }
+      if (e.key === 'Escape') clearFilters();
+    });
+  }
+
+  // ── Init ──
+  function init() {
+    SKUS.forEach(s => { s._history = generateHistory(s); });
+    initFilters();
+    bindEvents();
+    render();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+  </script>
+</body>
+</html>
